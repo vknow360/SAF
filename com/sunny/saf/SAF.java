@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.UriPermission;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.provider.DocumentsContract;
 import com.google.appinventor.components.annotations.DesignerComponent;
 import com.google.appinventor.components.annotations.SimpleEvent;
@@ -59,7 +58,11 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
     @Override
     public void resultReturned(int requestCode, int resultCode, Intent intent) {
         if (intentReqCode == requestCode) {
-            GotUri(intent.getData(), String.valueOf(intent.getData()));
+            if (resultCode == Activity.RESULT_OK){
+                GotUri(intent.getData(),String.valueOf(intent.getData()));
+            }else if (resultCode == Activity.RESULT_CANCELED){
+                GotUri("","");
+            }
         }
     }
 
@@ -329,7 +332,7 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
                 if (!GetMimeType(uriString).equals(DocumentDirMimeType())) {
                     String res;
                     try {
-                        OutputStream fileOutputStream = contentResolver.openOutputStream(Uri.parse(uriString));
+                        OutputStream fileOutputStream = contentResolver.openOutputStream(Uri.parse(uriString),"wt");
                         res = writeToOutputStream(fileOutputStream, content);
                         res = res.isEmpty() ? uriString : res;
                     } catch (Exception e) {
@@ -371,7 +374,7 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
             public void run() {
                 if (!GetMimeType(uriString).equals(DocumentDirMimeType())) {
                     try {
-                        OutputStream outputStream = contentResolver.openOutputStream(Uri.parse(uriString));
+                        OutputStream outputStream = contentResolver.openOutputStream(Uri.parse(uriString),"wt");
                         ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream();
                         arrayOutputStream.write((byte[]) byteArray);
                         arrayOutputStream.writeTo(outputStream);
