@@ -260,7 +260,7 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
                 DocumentsContract.Document.FLAG_SUPPORTS_MOVE);
     }
 
-    @SimpleFunction()
+    @SimpleFunction(description = "Returns whether document is deletable or not")
     public boolean IsDeleteSupported(final String documentUri) {
         return isFlagTrue("IsDeleteSupported",
                 Uri.parse(documentUri),
