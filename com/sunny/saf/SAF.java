@@ -38,10 +38,11 @@ author :- Sunny Gupta (vknow360)
 
 @DesignerComponent(version = 1,
         versionName = "1.1",
-        description = "A non-visible component to access files using Storage Access Framework",
+        description = "Extension to access files using Storage Access Framework <br> Developed by Sunny Gupta",
         category = ComponentCategory.EXTENSION,
         nonVisible = true,
         androidMinSdk = 21,
+        helpUrl = "https://community.appinventor.mit.edu/t/saf-app-inventor-implementation-of-storage-access-framework/41603",           
         iconName = "https://res.cloudinary.com/andromedaviewflyvipul/image/upload/c_scale,h_20,w_20/v1571472765/ktvu4bapylsvnykoyhdm.png")
 @SimpleObject(external = true)
 public class SAF extends AndroidNonvisibleComponent implements ActivityResultListener {
