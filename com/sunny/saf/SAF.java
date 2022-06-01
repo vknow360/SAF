@@ -23,12 +23,15 @@ import com.google.appinventor.components.runtime.util.AsynchUtil;
 import com.google.appinventor.components.runtime.util.YailList;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,12 +40,12 @@ author :- Sunny Gupta (vknow360)
 */
 
 @DesignerComponent(version = 1,
-        versionName = "1.1",
+        versionName = "1.2",
         description = "Extension to access files using Storage Access Framework <br> Developed by Sunny Gupta",
         category = ComponentCategory.EXTENSION,
         nonVisible = true,
         androidMinSdk = 21,
-        helpUrl = "https://community.appinventor.mit.edu/t/saf-app-inventor-implementation-of-storage-access-framework/41603",           
+        helpUrl = "https://community.appinventor.mit.edu/t/saf-app-inventor-implementation-of-storage-access-framework/41603",
         iconName = "https://res.cloudinary.com/andromedaviewflyvipul/image/upload/c_scale,h_20,w_20/v1571472765/ktvu4bapylsvnykoyhdm.png")
 @SimpleObject(external = true)
 public class SAF extends AndroidNonvisibleComponent implements ActivityResultListener {
@@ -198,7 +201,7 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
         try {
             return getStringValue(documentUri, DocumentsContract.Document.COLUMN_DISPLAY_NAME);
         } catch (Exception e) {
-            postError("DisplayName", e.getMessage());
+            postError("GetDisplayName", e.getMessage());
         }
         return "";
     }
@@ -208,7 +211,7 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
         try {
             return getStringValue(documentUri, DocumentsContract.Document.COLUMN_SIZE);
         } catch (Exception e) {
-            postError("Size", e.getMessage());
+            postError("GetSize", e.getMessage());
         }
         return "";
     }
@@ -218,7 +221,7 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
         try {
             return getStringValue(documentUri, DocumentsContract.Document.COLUMN_LAST_MODIFIED);
         } catch (Exception e) {
-            postError("LastModifiedTime", e.getMessage());
+            postError("GetLastModifiedTime", e.getMessage());
         }
         return "";
     }
@@ -228,7 +231,7 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
         try {
             return getStringValue(documentUri, DocumentsContract.Document.COLUMN_MIME_TYPE);
         } catch (Exception e) {
-            postError("MimeType", e.getMessage());
+            postError("GetMimeType", e.getMessage());
         }
         return "";
     }
@@ -442,8 +445,8 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
             char[] buffer = new char[BUFFER_LENGTH];
             int offset = 0;
             int length;
-            while ((length = input.read(buffer, offset, BUFFER_LENGTH)) > 0) {
-                output.write(buffer, 0, length);
+            while ((length = input.read(buffer, offset, BUFFER_LENGTH)) != -1) {
+                output.write(buffer, offset, length);
             }
             return normalizeNewLines(output.toString());
         } catch (Exception e) {
@@ -464,11 +467,16 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
             public void run() {
                 if (!GetMimeType(uriString).equals(DocumentDirMimeType())) {
                     try {
+                        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                         InputStream inputStream = contentResolver.openInputStream(Uri.parse(uriString));
-                        byte[] byteArray = new byte[Integer.parseInt(GetSize(uriString))];
-                        inputStream.read(byteArray);
-                        inputStream.close();
-                        postReadResult(byteArray);
+                        int BUFFER_LENGTH = 4096;
+                        byte[] buffer = new byte[BUFFER_LENGTH];
+                        int length;
+                        int offset = 0;
+                        while ((length = inputStream.read(buffer, offset, BUFFER_LENGTH)) != -1) {
+                            outputStream.write(buffer, offset, length);
+                        }
+                        postReadResult(outputStream.toByteArray());
                     } catch (Exception e) {
                         postReadResult(e.getMessage());
                     }
@@ -655,6 +663,43 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
             postError("RenameDocument", e.getMessage());
             return "";
         }
+    }
+    @SimpleFunction(description = "Tries to copy document from source uri to ASD")
+    public void CopyDocumentToASD(final String sourceUri){
+        AsynchUtil.runAsynchronously(new Runnable() {
+            @Override
+            public void run() {
+                String name = GetDisplayName(sourceUri);
+                File file = new File(activity.getExternalFilesDir(null),name);
+                try{
+                    FileOutputStream fos = new FileOutputStream(file);
+                    InputStream is = contentResolver.openInputStream(Uri.parse(sourceUri));
+                    byte[] buffers = new byte[1024];
+                    int read;
+                    while ((read = is.read(buffers)) != -1) {
+                        fos.write(buffers, 0, read);
+                    }
+                    is.close();
+                    fos.close();
+                    postCtoASDresult(true,file.getPath());
+                }catch (Exception e){
+                    e.printStackTrace();
+                    postCtoASDresult(false,e.getMessage());
+                }
+            }
+        });
+    }
+    private void postCtoASDresult(final boolean successful,final String response){
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                DocumentCopiedToASD(successful, response);
+            }
+        });
+    }
+    @SimpleEvent()
+    public void DocumentCopiedToASD(boolean successful, String response) {
+        EventDispatcher.dispatchEvent(this, "DocumentCopiedToASD", successful, response);
     }
 
 }
