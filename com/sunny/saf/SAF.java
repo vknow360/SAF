@@ -22,16 +22,7 @@ import com.google.appinventor.components.runtime.errors.YailRuntimeError;
 import com.google.appinventor.components.runtime.util.AsynchUtil;
 import com.google.appinventor.components.runtime.util.YailList;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.nio.ByteBuffer;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,7 +50,7 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
         contentResolver = activity.getContentResolver();
     }
 
-    @Override
+    @Override 
     public void resultReturned(int requestCode, int resultCode, Intent intent) {
         if (intentReqCode == requestCode) {
             if (resultCode == Activity.RESULT_OK){
@@ -132,11 +123,14 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
     }
 
     @SimpleFunction(description = "Prompts user to select a single file")
-    public void OpenSingleDocument(String title, String type, YailList extraMimeTypes) {
+    public void OpenSingleDocument(String title,String initialDir, String type, YailList extraMimeTypes) {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         if (!type.isEmpty()) {
             intent.setType(type);
+        }
+        if (!initialDir.isEmpty()) {
+            intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, Uri.parse(initialDir));
         }
         intent.setFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
         if (!extraMimeTypes.isEmpty()) {
@@ -201,7 +195,7 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
         try {
             return getStringValue(documentUri, DocumentsContract.Document.COLUMN_DISPLAY_NAME);
         } catch (Exception e) {
-            postError("GetDisplayName", e.getMessage());
+            postError("DisplayName", e.getMessage());
         }
         return "";
     }
@@ -211,7 +205,7 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
         try {
             return getStringValue(documentUri, DocumentsContract.Document.COLUMN_SIZE);
         } catch (Exception e) {
-            postError("GetSize", e.getMessage());
+            postError("Size", e.getMessage());
         }
         return "";
     }
@@ -221,7 +215,7 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
         try {
             return getStringValue(documentUri, DocumentsContract.Document.COLUMN_LAST_MODIFIED);
         } catch (Exception e) {
-            postError("GetLastModifiedTime", e.getMessage());
+            postError("LastModifiedTime", e.getMessage());
         }
         return "";
     }
@@ -231,7 +225,7 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
         try {
             return getStringValue(documentUri, DocumentsContract.Document.COLUMN_MIME_TYPE);
         } catch (Exception e) {
-            postError("GetMimeType", e.getMessage());
+            postError("MimeType", e.getMessage());
         }
         return "";
     }
@@ -425,8 +419,13 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
                 if (!GetMimeType(uriString).equals(DocumentDirMimeType())) {
                     String res;
                     try {
-                        res = readFromInputStream(contentResolver.openInputStream(Uri.parse(uriString)));
-                    } catch (FileNotFoundException e) {
+                        if (uriString.startsWith("//")){
+                            InputStream is = form.getAssets().open(uriString.substring(2));
+                            res = readFromInputStream(is);
+                        }else{
+                            res = readFromInputStream(contentResolver.openInputStream(Uri.parse(uriString)));
+                        }
+                    } catch (Exception e) {
                         res = e.getMessage();
                     }
                     postReadResult(res);
@@ -445,8 +444,8 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
             char[] buffer = new char[BUFFER_LENGTH];
             int offset = 0;
             int length;
-            while ((length = input.read(buffer, offset, BUFFER_LENGTH)) != -1) {
-                output.write(buffer, offset, length);
+            while ((length = input.read(buffer, offset, BUFFER_LENGTH)) > 0) {
+                output.write(buffer, 0, length);
             }
             return normalizeNewLines(output.toString());
         } catch (Exception e) {
@@ -467,16 +466,20 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
             public void run() {
                 if (!GetMimeType(uriString).equals(DocumentDirMimeType())) {
                     try {
-                        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                        InputStream inputStream = contentResolver.openInputStream(Uri.parse(uriString));
-                        int BUFFER_LENGTH = 4096;
-                        byte[] buffer = new byte[BUFFER_LENGTH];
-                        int length;
-                        int offset = 0;
-                        while ((length = inputStream.read(buffer, offset, BUFFER_LENGTH)) != -1) {
-                            outputStream.write(buffer, offset, length);
+                        InputStream inputStream;
+                        if (uriString.startsWith("//")){
+                            inputStream = form.getAssets().open(uriString.substring(2));
+                        }else{
+                            inputStream = contentResolver.openInputStream(Uri.parse(uriString));
                         }
-                        postReadResult(outputStream.toByteArray());
+                        byte[] b = new byte[8192];
+                        ByteArrayOutputStream os = new ByteArrayOutputStream();
+                        int c;
+                        while ((c = inputStream.read(b)) != -1) {
+                            os.write(b, 0, c);
+                        }
+                        inputStream.close();
+                        postReadResult(os.toByteArray());
                     } catch (Exception e) {
                         postReadResult(e.getMessage());
                     }
@@ -664,7 +667,7 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
             return "";
         }
     }
-    @SimpleFunction(description = "Tries to copy document from source uri to ASD")
+@SimpleFunction(description = "Tries to copy document from source uri to ASD")
     public void CopyDocumentToASD(final String sourceUri){
         AsynchUtil.runAsynchronously(new Runnable() {
             @Override
@@ -674,7 +677,7 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
                 try{
                     FileOutputStream fos = new FileOutputStream(file);
                     InputStream is = contentResolver.openInputStream(Uri.parse(sourceUri));
-                    byte[] buffers = new byte[1024];
+                    byte[] buffers = new byte[4096];
                     int read;
                     while ((read = is.read(buffers)) != -1) {
                         fos.write(buffers, 0, read);
@@ -697,9 +700,8 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
             }
         });
     }
-    @SimpleEvent()
+    @SimpleEvent(description="Event raised after getting 'CopyDocumentToASD' result")
     public void DocumentCopiedToASD(boolean successful, String response) {
         EventDispatcher.dispatchEvent(this, "DocumentCopiedToASD", successful, response);
     }
-
 }
