@@ -16,4 +16,6 @@ App Inventor implementation of Storage Access Framework <br>
 
 1) https://community.appinventor.mit.edu/t/saf-app-inventor-implementation-of-storage-access-framework/41603
 
+## Sponsors
+- [Alexandre Gorine](https://community.appinventor.mit.edu/u/alexandre_gorine)
 
