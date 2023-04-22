@@ -8,11 +8,7 @@ import android.content.UriPermission;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.DocumentsContract;
-import com.google.appinventor.components.annotations.DesignerComponent;
-import com.google.appinventor.components.annotations.SimpleEvent;
-import com.google.appinventor.components.annotations.SimpleFunction;
-import com.google.appinventor.components.annotations.SimpleObject;
-import com.google.appinventor.components.annotations.SimpleProperty;
+import com.google.appinventor.components.annotations.*;
 import com.google.appinventor.components.common.ComponentCategory;
 import com.google.appinventor.components.runtime.ActivityResultListener;
 import com.google.appinventor.components.runtime.AndroidNonvisibleComponent;
@@ -50,13 +46,13 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
         contentResolver = activity.getContentResolver();
     }
 
-    @Override 
+    @Override
     public void resultReturned(int requestCode, int resultCode, Intent intent) {
         if (intentReqCode == requestCode) {
-            if (resultCode == Activity.RESULT_OK){
-                GotUri(intent.getData(),String.valueOf(intent.getData()));
-            }else if (resultCode == Activity.RESULT_CANCELED){
-                GotUri("","");
+            if (resultCode == Activity.RESULT_OK) {
+                GotUri(intent.getData(), String.valueOf(intent.getData()));
+            } else if (resultCode == Activity.RESULT_CANCELED) {
+                GotUri("", "");
             }
         }
     }
@@ -123,7 +119,7 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
     }
 
     @SimpleFunction(description = "Prompts user to select a single file")
-    public void OpenSingleDocument(String title,String initialDir, String type, YailList extraMimeTypes) {
+    public void OpenSingleDocument(String title, String initialDir, String type, YailList extraMimeTypes) {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         if (!type.isEmpty()) {
@@ -330,7 +326,7 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
                 if (!GetMimeType(uriString).equals(DocumentDirMimeType())) {
                     String res;
                     try {
-                        OutputStream fileOutputStream = contentResolver.openOutputStream(Uri.parse(uriString),"wt");
+                        OutputStream fileOutputStream = contentResolver.openOutputStream(Uri.parse(uriString), "wt");
                         res = writeToOutputStream(fileOutputStream, content);
                         res = res.isEmpty() ? uriString : res;
                     } catch (Exception e) {
@@ -342,6 +338,40 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
                 }
             }
         });
+    }
+
+    @SimpleFunction(description = "Writes to given uri")
+    public void WriteAsHexString(final String uriString, final String content) {
+        AsynchUtil.runAsynchronously(new Runnable() {
+            @Override
+            public void run() {
+                if (!GetMimeType(uriString).equals(DocumentDirMimeType())) {
+                    try {
+                        byte[] data = hexStringToByteArray(content);
+                        OutputStream outputStream = contentResolver.openOutputStream(Uri.parse(uriString), "wt");
+                        ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream();
+                        arrayOutputStream.write(data);
+                        arrayOutputStream.writeTo(outputStream);
+                        postWriteResult(uriString);
+                    } catch (Exception e) {
+                        postWriteResult(e.getMessage());
+                    }
+                } else {
+                    postError("WriteAsHexString", "Can't write text to dir");
+                }
+            }
+        });
+    }
+
+    private byte[] hexStringToByteArray(String s) {
+        s = s.replaceAll(" ", "");
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                    + Character.digit(s.charAt(i + 1), 16));
+        }
+        return data;
     }
 
     private String writeToOutputStream(OutputStream fileOutputStream, String content) {
@@ -372,7 +402,7 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
             public void run() {
                 if (!GetMimeType(uriString).equals(DocumentDirMimeType())) {
                     try {
-                        OutputStream outputStream = contentResolver.openOutputStream(Uri.parse(uriString),"wt");
+                        OutputStream outputStream = contentResolver.openOutputStream(Uri.parse(uriString), "wt");
                         ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream();
                         arrayOutputStream.write((byte[]) byteArray);
                         arrayOutputStream.writeTo(outputStream);
@@ -419,10 +449,10 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
                 if (!GetMimeType(uriString).equals(DocumentDirMimeType())) {
                     String res;
                     try {
-                        if (uriString.startsWith("//")){
+                        if (uriString.startsWith("//")) {
                             InputStream is = form.getAssets().open(uriString.substring(2));
                             res = readFromInputStream(is);
-                        }else{
+                        } else {
                             res = readFromInputStream(contentResolver.openInputStream(Uri.parse(uriString)));
                         }
                     } catch (Exception e) {
@@ -467,9 +497,9 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
                 if (!GetMimeType(uriString).equals(DocumentDirMimeType())) {
                     try {
                         InputStream inputStream;
-                        if (uriString.startsWith("//")){
+                        if (uriString.startsWith("//")) {
                             inputStream = form.getAssets().open(uriString.substring(2));
-                        }else{
+                        } else {
                             inputStream = contentResolver.openInputStream(Uri.parse(uriString));
                         }
                         byte[] b = new byte[8192];
@@ -488,6 +518,58 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
                 }
             }
         });
+    }
+
+    @SimpleFunction()
+    public void ReadAsHexString(final String uriString) {
+        AsynchUtil.runAsynchronously(new Runnable() {
+            @Override
+            public void run() {
+                if (!GetMimeType(uriString).equals(DocumentDirMimeType())) {
+                    try {
+                        InputStream inputStream;
+                        if (uriString.startsWith("//")) {
+                            inputStream = form.getAssets().open(uriString.substring(2));
+                        } else {
+                            inputStream = contentResolver.openInputStream(Uri.parse(uriString));
+                        }
+                        /*
+                        DataInputStream dis = new DataInputStream(inputStream);
+                        StringBuilder buffer = new StringBuilder();
+                        while(dis.available()>0) {
+                            String hex = String.format("%02X", dis.readByte() & 0xFF);
+                            buffer.append(hex).append(' ');
+                        }*/
+                        byte[] b = new byte[8192];
+                        ByteArrayOutputStream os = new ByteArrayOutputStream();
+                        int c;
+                        while ((c = inputStream.read(b)) != -1) {
+                            os.write(b, 0, c);
+                        }
+                        inputStream.close();
+                        byte[] bytes = os.toByteArray();
+                        final String result = encodeHexString(bytes);
+                        postReadResult(result);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        postReadResult(e.getMessage());
+                    }
+                } else {
+                    postError("ReadAsHexString", "Can't read bytes from dir");
+                }
+            }
+        });
+    }
+
+    public String encodeHexString(byte[] bytes) {
+        char[] HEXARRAY = "0123456789ABCDEF".toCharArray();
+        char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0; j < bytes.length; j++) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = HEXARRAY[v >>> 4];
+            hexChars[j * 2 + 1] = HEXARRAY[v & 0x0F];
+        }
+        return new String(hexChars);
     }
 
     @SimpleEvent(description = "Event invoked after reading from document.Returns content if operation was successful else returns error message")
@@ -667,14 +749,15 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
             return "";
         }
     }
-@SimpleFunction(description = "Tries to copy document from source uri to ASD")
-    public void CopyDocumentToASD(final String sourceUri){
+
+    @SimpleFunction(description = "Tries to copy document from source uri to ASD")
+    public void CopyDocumentToASD(final String sourceUri) {
         AsynchUtil.runAsynchronously(new Runnable() {
             @Override
             public void run() {
                 String name = GetDisplayName(sourceUri);
-                File file = new File(activity.getExternalFilesDir(null),name);
-                try{
+                File file = new File(activity.getExternalFilesDir(null), name);
+                try {
                     FileOutputStream fos = new FileOutputStream(file);
                     InputStream is = contentResolver.openInputStream(Uri.parse(sourceUri));
                     byte[] buffers = new byte[4096];
@@ -684,15 +767,16 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
                     }
                     is.close();
                     fos.close();
-                    postCtoASDresult(true,file.getPath());
-                }catch (Exception e){
+                    postCtoASDresult(true, file.getPath());
+                } catch (Exception e) {
                     e.printStackTrace();
-                    postCtoASDresult(false,e.getMessage());
+                    postCtoASDresult(false, e.getMessage());
                 }
             }
         });
     }
-    private void postCtoASDresult(final boolean successful,final String response){
+
+    private void postCtoASDresult(final boolean successful, final String response) {
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -700,8 +784,33 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
             }
         });
     }
-    @SimpleEvent(description="Event raised after getting 'CopyDocumentToASD' result")
+
+    @SimpleEvent(description = "Event raised after getting 'CopyDocumentToASD' result")
     public void DocumentCopiedToASD(boolean successful, String response) {
         EventDispatcher.dispatchEvent(this, "DocumentCopiedToASD", successful, response);
     }
+    /*
+    @SimpleFunction()
+    public String ConvertBytesToString(Object bytes) {
+        String str = Arrays.toString((byte[]) bytes);
+        return str.substring(1, str.length() - 1);
+    }*/
+
+    @SimpleFunction()
+    public Object ConvertStringToBytes(String byteString) {
+        String[] str = byteString.substring(1, byteString.length() - 1).split(" ");
+        List<String> list = new ArrayList<>();
+        for (String s:
+             str) {
+            if (!s.trim().isEmpty()){
+                list.add(s.trim());
+            }
+        }
+        byte[] bytes = new byte[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            bytes[i] = (byte) Integer.parseInt(list.get(i));
+        }
+        return bytes;
+    }
+
 }
