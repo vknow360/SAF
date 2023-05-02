@@ -7,8 +7,13 @@ import android.content.Intent;
 import android.content.UriPermission;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.storage.StorageManager;
 import android.provider.DocumentsContract;
-import com.google.appinventor.components.annotations.*;
+import com.google.appinventor.components.annotations.DesignerComponent;
+import com.google.appinventor.components.annotations.SimpleEvent;
+import com.google.appinventor.components.annotations.SimpleFunction;
+import com.google.appinventor.components.annotations.SimpleObject;
+import com.google.appinventor.components.annotations.SimpleProperty;
 import com.google.appinventor.components.common.ComponentCategory;
 import com.google.appinventor.components.runtime.ActivityResultListener;
 import com.google.appinventor.components.runtime.AndroidNonvisibleComponent;
@@ -18,7 +23,15 @@ import com.google.appinventor.components.runtime.errors.YailRuntimeError;
 import com.google.appinventor.components.runtime.util.AsynchUtil;
 import com.google.appinventor.components.runtime.util.YailList;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -106,6 +119,19 @@ public class SAF extends AndroidNonvisibleComponent implements ActivityResultLis
     @SimpleFunction(description = "Converts string to uri")
     public Object StringToUriObject(String uriString) {
         return Uri.parse(uriString);
+    }
+    @SimpleFunction()
+    public String InitialDir(String dir){
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            StorageManager sm = (StorageManager) form.$context().getSystemService(Context.STORAGE_SERVICE);
+            Intent intent = sm.getPrimaryStorageVolume().createOpenDocumentTreeIntent();
+            Uri uri = intent.getParcelableExtra("android.provider.extra.INITIAL_URI");
+            String scheme = uri.toString();
+            scheme = scheme.replace("/root/", "/document/");
+            scheme += "%3A" + dir.replaceAll("/","%2F");
+            return String.valueOf(Uri.parse(scheme));
+        }
+        return "";
     }
 
     @SimpleFunction(description = "Prompts user to select a document tree")
