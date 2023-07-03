@@ -1,10 +1,27 @@
 # SAF
-App Inventor implementation of Storage Access Framework
+App Inventor implementation of Storage Access Framework <br>
+**Latest Version:** 1.2
 
 ## Blocks
-![image](https://user-images.githubusercontent.com/41724811/134688866-63f9f7c8-0cb4-4c2b-892a-aa18fe7dbeb5.png) <br>
-![image](https://user-images.githubusercontent.com/41724811/134688887-55167d9b-64ba-4d92-974b-10b01bdf1b3b.png) <br>
-![image](https://user-images.githubusercontent.com/41724811/134688927-53e6eff5-2629-4771-bc24-e6c737a61090.png) <br>
-![image](https://user-images.githubusercontent.com/41724811/134688956-1cef0079-414b-4690-9a9d-d065f3d0ede4.png) <br>
-![image](https://user-images.githubusercontent.com/41724811/134688995-939e23ee-c41c-41da-9d5a-64ffdf2c0ff3.png) <br>
-![image](https://user-images.githubusercontent.com/41724811/134689195-ceada45b-ac26-4e0a-9cb4-3fecd5a28b6e.png)
+![image](https://github.com/vknow360/SAF/assets/41724811/09b33443-a25a-4fb4-9039-e97368518fa3)
+<br>
+![image](https://github.com/vknow360/SAF/assets/41724811/6d95c474-8e8d-48d4-afd0-4e13c014f153)
+<br>
+![image](https://github.com/vknow360/SAF/assets/41724811/4bc9031a-7105-449b-82cf-7422ea1c460b)
+ <br>
+![image](https://github.com/vknow360/SAF/assets/41724811/85a4c5e3-f13a-4479-8722-477f96dcf13d)
+ <br>
+![image](https://github.com/vknow360/SAF/assets/41724811/11f0edaf-741d-4b20-9d44-17f1b15ca460)
+ <br>
+![image](https://github.com/vknow360/SAF/assets/41724811/2f237c45-fbb1-4a95-8512-68785c41b367)
+ <br>
+![image](https://github.com/vknow360/SAF/assets/41724811/de12d9d3-d635-48ce-a491-eae6fc5d4f95)
+<br>
+
+## Usages
+
+1) https://community.appinventor.mit.edu/t/saf-app-inventor-implementation-of-storage-access-framework/41603
+
+## Sponsors
+- [Alexandre Gorine](https://community.appinventor.mit.edu/u/alexandre_gorine)
+
