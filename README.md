@@ -1,6 +1,6 @@
 # SAF
 App Inventor implementation of Storage Access Framework <br>
-**Latest Version:** 1.2
+**Latest Version:** 1.3
 
 ## Blocks
 ![image](https://github.com/vknow360/SAF/assets/41724811/09b33443-a25a-4fb4-9039-e97368518fa3)
